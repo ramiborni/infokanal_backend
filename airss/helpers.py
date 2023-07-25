@@ -15,9 +15,29 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 import base64
 
+from nltk import word_tokenize
+
+from airss.models import RssFeedAiSettings
+from airss.scrapper import choose_scraping_method
+
 # import msgspec
 
-openai.api_key = "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"
+openai.api_key = "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"
+
+
+def filter_results(feed_text: str, keywords, negative_keywords) -> bool:
+    for word in word_tokenize(feed_text):
+        # Check if the word matches any of the negative keywords
+        if any(neg_keyword.lower() == word for neg_keyword in negative_keywords):
+            return False
+
+        # Check if the word matches any of the positive keywords
+        if any(keyword == word or keyword.lower() == word or keyword.replace(' ',
+                                                                             '') == word or keyword.lower() == word.replace(
+            "#", "").lower() or (" " in keyword and keyword.lower() in feed_text.lower()) for keyword in keywords):
+            return True
+
+    return False
 
 
 def generate_rss_content(feed):
@@ -80,28 +100,54 @@ def parse_published_date(date_string):
     return None
 
 
-def rephrase_news_with_openai(article):
-    completion = openai.ChatCompletion.create(model="gpt-3.5-turbo-16k",
-                                              messages=[
-                                                  {"role": "system",
-                                                   "content": "You are a journalist that make a news story in "
-                                                              "norwegian language only and results should be only in"
-                                                              "three lines and add this attributes (title=...\n preamble=...\n "
-                                                              "text=...)."},
-                                                  {"role": "user",
-                                                   "content": f"create a news story in norwegian based on this article object:\n{article['data']}\n"}])
-    time.sleep(30)
-    result = completion.choices[0].message.content.strip().replace('"', '')
-    pattern = r'title=(.*?)\n{1,2}preamble=(.*?)\n{1,2}text=(.*)'
-    match = re.search(pattern, result)
+def transform_article_with_ai(article, method_name):
+    # Execute the appropriate scraping method based on the source of the article
+    keywords_settings = RssFeedAiSettings.objects.all()
+    article_body = choose_scraping_method(method_name, article)
+    if filter_results(article_body, keywords_settings[0].keywords,
+                      keywords_settings[0].negative_keywords):
+        # Initiate a chat with the OpenAI GPT-3.5-16K model and provide it with the instructions and the article text
+        chat_log = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-16k",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "As a journalist, you are tasked with rewording a given article in Only Norwegian "
+                               "language, Do not write anything in english or any other language unless the attributes. "
+                               "The rephrased version should include a title, preamble, and article text, all in a unique "
+                               "style that doesn't resemble the original text. The outputs should be given in three lines "
+                               "with the attributes (title=...\n preamble=...\n text=...), the title should be max 15 "
+                               "words and in one sentence, the preamble should be max 1 sentences and the text should be "
+                               "article body and it "
+                               "should be max 150 words. keep in mind that every article is sent potentially has some "
+                               "html,css,js scripts and you have to remove them and keep only the a article body"
+                },
+                {
+                    "role": "user",
+                    "content": f"Please rewrite the following text in a unique style. The text is in Norwegian. Here is "
+                               f"the text:\n{article_body}\n"
+                }
+            ]
+        )
+        # Pause for 30 seconds to wait for the AI response
+        time.sleep(30)
 
-    if match:
-        story = {
-            'title': match.group(1),
-            'preamble': match.group(2),
-            'text': match.group(3),
-        }
+        # Extract the AI's response and clean it
+        ai_response = chat_log.choices[0].message.content.strip().replace('"', '')
 
+        pattern = r'title=(.*?)\n{1,2}preamble=(.*?)\n{1,2}text=(.*)'
+
+        match = re.search(pattern, ai_response)
+
+        # If the AI response matches the expected pattern, extract the transformed title, preamble, and text
+        if match:
+            transformed_article = {
+                'title': match.group(1),
+                'preamble': match.group(2),
+                'text': match.group(3),
+            }
+
+        # Try to find an image in the article links, resize it, and convert it to base64. If no image is found, generate a new image.
         image_url = ""
         links = article['data'].get('links', [])
         for link in links:
@@ -109,23 +155,23 @@ def rephrase_news_with_openai(article):
                 image_url = resize_image(link.get('href'))
 
         if image_url == "":
-            image_url = generate_base64_image(story['title'])
+            image_url = generate_base64_image(transformed_article['title'])
 
+        # Parse the publication date, if it exists
         pub_date = article['data'].get('published')
+        pub_datetime = parse_published_date(pub_date) if pub_date else None
 
-        if pub_date:
-            pub_datetime = parse_published_date(pub_date)
-        else:
-            pub_datetime = None
-
+        # Return the transformed article with additional information
         return {
             "source_id": article['feed_source_id'],
             "article_url": article['data']["link"],
             "pub_date": pub_datetime,
             "source_feed_id": article['feed_source_name'] + "-" + article['data']['id'],
             "image_url": image_url,
-            **story
+            **transformed_article
         }
+    else:
+        return None
 
 
 def generate_base64_image(text, width=600, height=200, font_size=16, padding_top=10):
@@ -204,6 +250,7 @@ def resize_image(image_url):
     except Exception as e:
         print("Error resizing image:", e)
         return None
+
 
 def convert_image_to_base64(image):
     buffered = io.BytesIO()

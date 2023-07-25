@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.http import Http404
 
-from airss.helpers import generate_rss_content, join_feed_entries, rephrase_news_with_openai
+from airss.helpers import generate_rss_content, join_feed_entries, transform_article_with_ai
 from airss.models import RSSFeedSource, RssFeedAiContent, RssFeedAiSettings
 from airss.serializers import RSSFeedSourceSerializer, RssFeedAiContentSerializer
 
@@ -59,55 +59,53 @@ class AIRssFeedApiView(APIView):
         return HttpResponse(rss_content, content_type='application/xml')
 
 
-def filter_results(feed_text: str, keywords, negative_keywords) -> bool:
-    for word in word_tokenize(feed_text):
-        # Check if the word matches any of the negative keywords
-        if any(neg_keyword.lower() == word for neg_keyword in negative_keywords):
-            return False
-
-        # Check if the word matches any of the positive keywords
-        if any(keyword == word or keyword.lower() == word or keyword.replace(' ',
-                                                                             '') == word or keyword.lower() == word.replace(
-            "#", "").lower() or (" " in keyword and keyword.lower() in feed_text.lower()) for keyword in keywords):
-            return True
-
-    return False
-
-
 class AIRssGetData(APIView):
     def get(self, request, *args, **kwargs):
         rss_feed_sources = RSSFeedSource.objects.all()
         serializer_data = RSSFeedSourceSerializer(rss_feed_sources, many=True).data
+        feed = self.get_feed(serializer_data)
+        keywords_settings = RssFeedAiSettings.objects.all()
+        filtered_feed = feed #self.filter_feed(feed, keywords_settings[0])
+        sorted_feed = self.sort_feed(filtered_feed)
+        ai_stories = self.create_ai_stories(sorted_feed)
+        return Response(ai_stories, status=200)
+
+    def get_feed(self, serializer_data):
         feed = []
         for data in serializer_data:
             feed.append(feedparser.parse(data['feed_url']))
-
         non_filtered_feeds = join_feed_entries(feed, serializer_data)
-        final_feed = [dict(frozenset(item.items())) for item in non_filtered_feeds]
+        return [dict(frozenset(item.items())) for item in non_filtered_feeds]
 
-        keywords_settings = RssFeedAiSettings.objects.all()
+    def sort_feed(self, feed):
+        return sorted(feed, key=lambda entry: entry['data'].get('published_parsed'), reverse=True)
 
-        filtered_feed = [entry for entry in final_feed if
-                         filter_results(entry['data'].get('title'), keywords_settings[0].keywords,
-                                        keywords_settings[0].negative_keywords)]
-        sorted_feed = sorted(filtered_feed, key=lambda entry: entry['data'].get('published_parsed'), reverse=True)
-
+    def create_ai_stories(self, sorted_feed):
         list_ai_stories = []
-
         for article in sorted_feed:
-            try:
-                existing_entry = RssFeedAiContent.objects.get(source_feed_id=article['feed_id'])
+            if self.is_existing_entry(article):
                 continue
-            except RssFeedAiContent.DoesNotExist:
-                existing_entry = None
-            ai_story = rephrase_news_with_openai(article)
+            ai_story = self.get_ai_story(article)
             if ai_story:
-                source_id = ai_story['source_id']
-                source = RSSFeedSource.objects.get(id=source_id)
-                ai_story['source'] = source.id
-                serializer = RssFeedAiContentSerializer(data=ai_story)
-                if serializer.is_valid(raise_exception=True):
-                    serializer.save()
-                    list_ai_stories.append(ai_story)
+                self.save_ai_story(ai_story)
+                list_ai_stories.append(ai_story)
+        return list_ai_stories
 
-        return Response(list_ai_stories, status=200)
+    def is_existing_entry(self, article):
+        try:
+            RssFeedAiContent.objects.get(source_feed_id=article['feed_id'])
+            return True
+        except RssFeedAiContent.DoesNotExist:
+            return False
+
+    def get_ai_story(self, article):
+        method_name = article['feed_source_name']  # Assuming 'feed_source_name' is the method name
+        return transform_article_with_ai(article, method_name)
+
+    def save_ai_story(self, ai_story):
+        source_id = ai_story['source_id']
+        source = RSSFeedSource.objects.get(id=source_id)
+        ai_story['source'] = source.id
+        serializer = RssFeedAiContentSerializer(data=ai_story)
+        if serializer.is_valid():
+            serializer.save()

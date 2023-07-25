@@ -4,6 +4,7 @@ from djongo import models
 class RSSFeedSource(models.Model):
     feed_source_name = models.CharField(max_length=100)
     feed_url = models.URLField()
+    require_login= models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
