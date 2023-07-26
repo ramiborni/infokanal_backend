@@ -47,9 +47,13 @@ class Scraper:
         # Cookies are used here for handling sessions (if needed)
         cookies = {
             'aid.session': 'qp3y99fbs3hvqk1ae534u6kqmhkaf0yxhqycv9dfwvazx4pmbvncc1lbqvgunce5cit1h56h1ydp3zjyufux1ofxuu8e7f9l6r7',
-            'VSTOKEN': '75fd5f3550:1690417302:newspaper,subscription:ae632f18-a900-4fe0-96eb-a93c7f075ccd:h-avis:jupiter',
+            'VSTOKEN': 'af90d057a8:1690557682:newspaper,subscription:ae632f18-a900-4fe0-96eb-a93c7f075ccd:h-avis:jupiter',
             'VSTOKEN2': '35aef9fe41:1690251703:::h-avis:jupiter',
-            'amedia:visitid': '99935ad3-9f64-49f8-b2a8-f6665634fb12|1690246415334'
+            'amedia:visitid': '99935ad3-9f64-49f8-b2a8-f6665634fb12|1690246415334',
+            'daxsub': 'a_sub_status%3Dactive%26a_user_key%3De52cd9e2-8585-4c64-918c-217c5c6bb611',
+            '__mbl': '61@{"u":[{"uid":"OwOtAEDyK7MK3zx2","ts":1689858229},1689948229]}',
+            '_k5a': '61@{"u":[{"uid":"eSOb6Slsy40DKQaF","ts":1689858229},1689948229]}',
+            'amedia:fpbid': '6b2f4111-b729-4a9d-ab02-7fe5eb9efd9b'
         }
 
         response = self.ses.get(url, cookies=cookies)
