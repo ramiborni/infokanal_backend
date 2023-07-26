@@ -22,7 +22,7 @@ from airss.scrapper import choose_scraping_method
 
 # import msgspec
 
-openai.api_key = "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"
+openai.api_key = "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"
 
 
 def filter_results(feed_text: str, keywords, negative_keywords) -> bool:
@@ -215,6 +215,10 @@ def resize_image(image_url):
         # Download the image from the URL
         response = requests.get(image_url)
         img = Image.open(io.BytesIO(response.content))
+
+        # If the image has an alpha channel, convert it to RGB
+        if img.mode in ('RGBA', 'LA'):
+            img = img.convert('RGB')
 
         # Calculate the current file size in KB
         current_size_kb = len(response.content) // 1024

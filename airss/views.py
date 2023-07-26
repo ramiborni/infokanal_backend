@@ -107,5 +107,5 @@ class AIRssGetData(APIView):
         source = RSSFeedSource.objects.get(id=source_id)
         ai_story['source'] = source.id
         serializer = RssFeedAiContentSerializer(data=ai_story)
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
