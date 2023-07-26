@@ -59,6 +59,8 @@ def generate_rss_content(feed):
             fe.link(href=entry.article_url, rel='alternate')
         if entry.preamble:
             fe.summary(entry.preamble)
+        if entry.text:
+            fe.content(entry.text+f"\nSaken var først omtalt på - {entry.source.feed_source_name}")
         if entry.pub_date:
             fe.pubDate(entry.pub_date)
         if entry.image_url:

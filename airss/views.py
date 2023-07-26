@@ -51,9 +51,8 @@ class AIRssFeedSettingsApiView(APIView):
 class AIRssFeedApiView(APIView):
 
     def get(self, request, *args, **kwargs):
-        rss_feed = RssFeedAiContent.objects.all()
+        rss_feed = RssFeedAiContent.objects.select_related('source').all()
         sorted_feed = sorted(rss_feed, key=lambda entry: entry.pub_date, reverse=True)
-
         rss_content = generate_rss_content(sorted_feed)
 
         return HttpResponse(rss_content, content_type='application/xml')
