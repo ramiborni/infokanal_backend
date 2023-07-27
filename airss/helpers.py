@@ -103,6 +103,8 @@ def parse_published_date(date_string):
 
 
 def transform_article_with_ai(article, method_name):
+    transformed_article = None  # Add this line
+
     # Execute the appropriate scraping method based on the source of the article
     keywords_settings = RssFeedAiSettings.objects.all()
     article_body = choose_scraping_method(method_name, article)
