@@ -22,7 +22,7 @@ from airss.scrapper import choose_scraping_method
 
 # import msgspec
 
-openai.api_key = "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"
+openai.api_key = "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"
 
 
 def filter_results(feed_text: str, keywords, negative_keywords) -> bool:
