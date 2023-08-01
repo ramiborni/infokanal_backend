@@ -22,7 +22,7 @@ from airss.scrapper import choose_scraping_method
 
 # import msgspec
 
-openai.api_key = "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"
+openai.api_key = "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"
 
 
 def filter_results(feed_text: str, keywords, negative_keywords) -> bool:
@@ -60,7 +60,7 @@ def generate_rss_content(feed):
         if entry.preamble:
             fe.summary(entry.preamble)
         if entry.text:
-            fe.content(entry.text+f"\nSaken var først omtalt på - {entry.source.feed_source_name}")
+            fe.content(entry.text + f"\nSaken var først omtalt på - {entry.source.feed_source_name}")
         if entry.pub_date:
             fe.pubDate(entry.pub_date)
         if entry.image_url:
@@ -108,8 +108,8 @@ def transform_article_with_ai(article, method_name):
     # Execute the appropriate scraping method based on the source of the article
     keywords_settings = RssFeedAiSettings.objects.all()
     article_body = choose_scraping_method(method_name, article)
-    if filter_results(article_body, keywords_settings[0].keywords,
-                      keywords_settings[0].negative_keywords):
+    if article_body is not None and filter_results(article_body, keywords_settings[0].keywords,
+                                                   keywords_settings[0].negative_keywords):
         # Initiate a chat with the OpenAI GPT-3.5-16K model and provide it with the instructions and the article text
         chat_log = openai.ChatCompletion.create(
             model="gpt-3.5-turbo-16k",
@@ -124,7 +124,10 @@ def transform_article_with_ai(article, method_name):
                                "words and in one sentence, the preamble should be max 1 sentences and the text should be "
                                "article body and it "
                                "should be max 150 words. keep in mind that every article is sent potentially has some "
-                               "html,css,js scripts and you have to remove them and keep only the a article body"
+                               "html,css,js scripts and you have to remove them and keep only the a article body, "
+                               "also do not ever write a text in English unless it's a brandname or person's name "
+                               "that's in english, also ignore any text that may look an ad and out of context of the "
+                               "article"
                 },
                 {
                     "role": "user",
@@ -186,7 +189,7 @@ def generate_base64_image(text, width=600, height=200, font_size=16, padding_top
     draw = ImageDraw.Draw(image)
 
     # Load a font for drawing the text
-    font = ImageFont.truetype("arial.ttf", font_size)
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", font_size)
 
     # Calculate the available height for drawing text (considering the padding)
     available_height = height - padding_top

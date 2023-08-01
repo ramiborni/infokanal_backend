@@ -1,3 +1,6 @@
+import time
+from datetime import datetime
+
 from django.http import HttpResponse
 from django.shortcuts import render
 from nltk import word_tokenize
@@ -77,7 +80,10 @@ class AIRssGetData(APIView):
         return [dict(frozenset(item.items())) for item in non_filtered_feeds]
 
     def sort_feed(self, feed):
-        return sorted(feed, key=lambda entry: entry['data'].get('published_parsed'), reverse=True)
+        def sort_key(entry):
+            published_parsed = entry['data'].get('published_parsed')
+            return datetime.fromtimestamp(time.mktime(published_parsed)) if published_parsed else datetime.min
+        return sorted(feed, key=sort_key, reverse=True)
 
     def create_ai_stories(self, sorted_feed):
         list_ai_stories = []
