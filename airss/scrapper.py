@@ -11,7 +11,7 @@ class Scraper:
     def filter_article_body_source(self, article):
         # Function to determine which part of the article to scrape based on the source name
         source_name = article['feed_source_name']
-        if source_name == "fetchrss.com":
+        if source_name == "Politiets nettpatrulje - Sør-Vest":
             return article["data"]["description"]
         if source_name == "finansavisen.no":
             if "content" in article["data"]:
@@ -197,24 +197,27 @@ class Scraper:
         # Function to handle articles which don't need authentication
         return article
 
+    def empty(self, any):
+        return None
+
 
 def choose_scraping_method(method_name, article_body):
     # Function to map the source name to the respective function for scraping
     scraper = Scraper()
 
     methods = {
-        'karmoynytt.no': scraper.karmoynytt,
-        'h-avis.no': scraper.h_avis,
-        'fetchrss.com': scraper.no_auth,
-        'grannar.no': scraper.no_auth,
-        'finansavisen.no': scraper.no_auth,
-        'sunnhordland.no': scraper.no_auth,
-        "NRK Rogaland": scraper.nrk,
-        'NRK Siste nytt': scraper.nrk,
-        'vg.no': scraper.vg_no,
-        'tv2.no': scraper.tv2,
-        'aftenposten.no': scraper.no_auth,
-        'nettavisen.no': scraper.no_auth,
+        'karmoynytt.no': scraper.karmoynytt,  # DONE
+        'h-avis.no': scraper.h_avis,  # DONE
+        'Politiets nettpatrulje - Sør-Vest ': scraper.no_auth,
+        'grannar.no': scraper.no_auth,  # MISSING AUTHENTICATION
+        'finansavisen.no': scraper.no_auth,  # DONE
+        'sunnhordland.no': scraper.no_auth,  # MISSING AUTHENTICATION
+        "NRK Rogaland": scraper.nrk,  # DONE
+        'NRK Siste nytt': scraper.nrk,  # DONE
+        'vg.no': scraper.vg_no,  # DONE
+        'tv2.no': scraper.tv2,  # DONE
+        'aftenposten.no': scraper.no_auth,  # DONE
+        'nettavisen.no': scraper.no_auth, # DONE
         'dagbladet.no': scraper.dagbladet
     }
 

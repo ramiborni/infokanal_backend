@@ -161,6 +161,7 @@ def transform_article_with_ai(article, method_name):
             if link.get('type') == 'image/jpeg' and link.get('rel') == 'enclosure':
                 image_url = resize_image(link.get('href'))
                 if image_url is None:
+                    print(transformed_article['title'])
                     image_url = generate_base64_image(transformed_article['title'])
 
         if image_url == "":
