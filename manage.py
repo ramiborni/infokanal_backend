@@ -2,8 +2,10 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from dotenv import load_dotenv
 
 
+load_dotenv()  # take environment variables from .env.
 
 
 sys.stdout.reconfigure(encoding='utf-8')

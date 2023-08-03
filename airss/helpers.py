@@ -22,8 +22,7 @@ from airss.scrapper import choose_scraping_method
 
 # import msgspec
 
-openai.api_key = "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"
-
+openai.api_key = os.getenv("OPENAI_APIKEY")
 
 def filter_results(feed_text: str, keywords, negative_keywords) -> bool:
     for word in word_tokenize(feed_text):
