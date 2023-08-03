@@ -4,7 +4,6 @@ import tempfile
 import textwrap
 import time
 from datetime import datetime
-
 import PIL
 import openai
 import pytz
@@ -21,8 +20,57 @@ from airss.models import RssFeedAiSettings
 from airss.scrapper import choose_scraping_method
 
 # import msgspec
+import feedparser
+from datetime import datetime
+import time
+from .models import RSSFeedSource, RssFeedAiContent
+from .serializers import RssFeedAiContentSerializer
 
 openai.api_key = os.getenv("OPENAI_APIKEY")
+
+
+def get_feed(serializer_data):
+    feed = []
+    for data in serializer_data:
+        feed.append(feedparser.parse(data['feed_url']))
+    non_filtered_feeds = join_feed_entries(feed, serializer_data)
+    return [dict(frozenset(item.items())) for item in non_filtered_feeds]
+
+def sort_feed(feed):
+    def sort_key(entry):
+        published_parsed = entry['data'].get('published_parsed')
+        return datetime.fromtimestamp(time.mktime(published_parsed)) if published_parsed else datetime.min
+    return sorted(feed, key=sort_key, reverse=True)
+
+def create_ai_stories(sorted_feed, is_existing_entry, get_ai_story, save_ai_story):
+    list_ai_stories = []
+    for article in sorted_feed:
+        if is_existing_entry(article):
+            continue
+        ai_story = get_ai_story(article)
+        if ai_story:
+            save_ai_story(ai_story)
+            list_ai_stories.append(ai_story)
+    return list_ai_stories
+
+def is_existing_entry(article):
+    try:
+        RssFeedAiContent.objects.get(source_feed_id=article['feed_id'])
+        return True
+    except RssFeedAiContent.DoesNotExist:
+        return False
+
+def get_ai_story(article):
+    method_name = article['feed_source_name']  # Assuming 'feed_source_name' is the method name
+    return transform_article_with_ai(article, method_name)
+
+def save_ai_story(ai_story):
+    source_id = ai_story['source_id']
+    source = RSSFeedSource.objects.get(id=source_id)
+    ai_story['source'] = source.id
+    serializer = RssFeedAiContentSerializer(data=ai_story)
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
 
 def filter_results(feed_text: str, keywords, negative_keywords) -> bool:
     for word in word_tokenize(feed_text):

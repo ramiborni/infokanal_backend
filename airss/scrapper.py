@@ -218,7 +218,7 @@ def choose_scraping_method(method_name, article_body):
         'tv2.no': scraper.tv2,  # DONE
         'aftenposten.no': scraper.no_auth,  # DONE
         'nettavisen.no': scraper.no_auth, # DONE
-        'dagbladet.no': scraper.dagbladet
+        'dagbladet.no': scraper.dagbladet  # DONE
     }
 
     print(method_name)
