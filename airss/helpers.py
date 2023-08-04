@@ -142,7 +142,7 @@ def parse_published_date(date_string):
     for date_format in date_formats:
         try:
             datetime_obj = datetime.strptime(date_string, date_format)
-            datetime_obj = datetime_obj.replace(tzinfo=pytz.timezone('GMT')).astimezone(norway_timezone)
+            datetime_obj = datetime_obj.astimezone(norway_timezone)
             return datetime_obj
         except ValueError:
             continue
