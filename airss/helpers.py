@@ -94,7 +94,8 @@ def generate_rss_content(feed):
     fg.title('infokanal RSS feed')
     fg.link(href='https://www.infokanal.com/feed/rss/ai.xml')
     fg.description('infokanal RSS feed')
-    fg.lastBuildDate(datetime.now(tz=pytz.timezone('Europe/Oslo')))
+    oslo_timezone = pytz.timezone('Europe/Oslo')
+    fg.lastBuildDate(datetime.now(tz=oslo_timezone))
 
     for entry in feed:
         fe = fg.add_entry()
@@ -109,7 +110,8 @@ def generate_rss_content(feed):
         if entry.text:
             fe.content(entry.text + f"\nSaken var først omtalt på - {entry.source.feed_source_name}")
         if entry.pub_date:
-            fe.pubDate(entry.pub_date)
+            pub_date = entry.pub_date.astimezone(oslo_timezone)
+            fe.pubDate(pub_date)
         if entry.image_url:
             fe.enclosure(entry.image_url, 0, 'image/jpeg')
             fe.media.thumbnail({'url': entry.image_url, 'width': '200'},
