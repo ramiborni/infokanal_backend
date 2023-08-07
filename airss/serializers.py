@@ -1,7 +1,7 @@
 import json
 
 from rest_framework import serializers
-from airss.models import RSSFeedSource, RssFeedAiContent
+from airss.models import RSSFeedSource, RssFeedAiContent, RssFeedAiSettings
 
 
 class RSSFeedSourceSerializer(serializers.ModelSerializer):
@@ -16,3 +16,10 @@ class RssFeedAiContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RssFeedAiContent
         fields = ["title", "preamble", "text", "article_url", "source", "image_url", "source_feed_id", "pub_date"]
+
+
+
+class RssFeedAiSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RssFeedAiSettings
+        fields = ['_id', 'keywords', 'negative_keywords']

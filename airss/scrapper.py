@@ -471,30 +471,33 @@ class Scraper:
 
 
 def choose_scraping_method(method_name, article_body):
-    # Function to map the source name to the respective function for scraping
-    scraper = Scraper()
+    try:
+        # Function to map the source name to the respective function for scraping
+        scraper = Scraper()
 
-    methods = {
-        'karmoynytt.no': scraper.karmoynytt,  # DONE
-        'h-avis.no': scraper.h_avis,  # DONE
-        'Politiets nettpatrulje - Sør-Vest ': scraper.no_auth,
-        'grannar.no': scraper.grannar,  # MISSING AUTHENTICATION
-        'finansavisen.no': scraper.no_auth,  # DONE
-        'sunnhordland.no': scraper.sunnhordland,  # MISSING AUTHENTICATION
-        "NRK Rogaland": scraper.nrk,  # DONE
-        'NRK Siste nytt': scraper.nrk,  # DONE
-        'vg.no': scraper.vg_no,  # DONE
-        'tv2.no': scraper.tv2,  # DONE
-        'aftenposten.no': scraper.no_auth,  # DONE
-        'nettavisen.no': scraper.no_auth,  # DONE
-        'dagbladet.no': scraper.dagbladet  # DONE
-    }
+        methods = {
+            'karmoynytt.no': scraper.karmoynytt,  # DONE
+            'h-avis.no': scraper.h_avis,  # DONE
+            'Politiets nettpatrulje - Sør-Vest ': scraper.no_auth,
+            'grannar.no': scraper.grannar,  # MISSING AUTHENTICATION
+            'finansavisen.no': scraper.no_auth,  # DONE
+            'sunnhordland.no': scraper.sunnhordland,  # MISSING AUTHENTICATION
+            "NRK Rogaland": scraper.nrk,  # DONE
+            'NRK Siste nytt': scraper.nrk,  # DONE
+            'vg.no': scraper.vg_no,  # DONE
+            'tv2.no': scraper.tv2,  # DONE
+            'aftenposten.no': scraper.no_auth,  # DONE
+            'nettavisen.no': scraper.no_auth,  # DONE
+            'dagbladet.no': scraper.dagbladet  # DONE
+        }
 
-    print(method_name)
+        print(method_name)
 
-    func = methods.get(method_name)
+        func = methods.get(method_name)
 
-    if func:
-        return func(scraper.filter_article_body_source(article_body))  # Executing the chosen function
-    else:
-        raise ValueError(f"Invalid method name: {method_name}")  # Raising error for invalid source name
+        if func:
+            return func(scraper.filter_article_body_source(article_body))  # Executing the chosen function
+        else:
+            raise ValueError(f"Invalid method name: {method_name}")  # Raising error for invalid source name
+    except:
+        return None
