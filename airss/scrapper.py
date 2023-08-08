@@ -334,6 +334,7 @@ class Scraper:
         driver.get(url)
         # Extract the HTML content
         html_content = driver.page_source
+        driver.quit()
 
         # Pass the HTML content to requests_html
         rs = requests_html.HTML(html=html_content)
@@ -481,7 +482,7 @@ def choose_scraping_method(method_name, article_body):
             'Politiets nettpatrulje - Sør-Vest ': scraper.no_auth,
             'grannar.no': scraper.grannar,  # MISSING AUTHENTICATION
             'finansavisen.no': scraper.no_auth,  # DONE
-            'sunnhordland.no': scraper.empty,  # MISSING AUTHENTICATION
+            'sunnhordland.no': scraper.sunnhordland,  # MISSING AUTHENTICATION
             "NRK Rogaland": scraper.nrk,  # DONE
             'NRK Siste nytt': scraper.nrk,  # DONE
             'vg.no': scraper.vg_no,  # DONE
