@@ -481,7 +481,7 @@ def choose_scraping_method(method_name, article_body):
             'Politiets nettpatrulje - Sør-Vest ': scraper.no_auth,
             'grannar.no': scraper.grannar,  # MISSING AUTHENTICATION
             'finansavisen.no': scraper.no_auth,  # DONE
-            'sunnhordland.no': scraper.sunnhordland,  # MISSING AUTHENTICATION
+            'sunnhordland.no': scraper.empty,  # MISSING AUTHENTICATION
             "NRK Rogaland": scraper.nrk,  # DONE
             'NRK Siste nytt': scraper.nrk,  # DONE
             'vg.no': scraper.vg_no,  # DONE

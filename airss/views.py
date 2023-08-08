@@ -15,6 +15,7 @@ from airss.models import RSSFeedSource, RssFeedAiContent, RssFeedAiSettings
 from airss.serializers import RSSFeedSourceSerializer, RssFeedAiContentSerializer, RssFeedAiSettingsSerializer
 
 import feedparser
+from bson import ObjectId
 
 
 # Create your views here.
@@ -47,7 +48,7 @@ class AIRssFeedSettingsKeywordsApiView(APIView):
 
     def get_object(self, pk):
         try:
-            return RssFeedAiSettings.objects.get(pk=pk)
+                        return RssFeedAiSettings.objects.get(_id=ObjectId(pk))
         except RssFeedAiSettings.DoesNotExist:
             raise Http404
 
@@ -87,9 +88,8 @@ class AIRssFeedSettingsApiView(APIView):
 class AIRssFeedApiView(APIView):
 
     def get(self, request, *args, **kwargs):
-        rss_feed = RssFeedAiContent.objects.select_related('source').all()
-        sorted_feed = sorted(rss_feed, key=lambda entry: entry.pub_date, reverse=True)
-        rss_content = generate_rss_content(sorted_feed)
+        rss_feed = RssFeedAiContent.objects.select_related('source').order_by('-pub_date')[:30]
+        rss_content = generate_rss_content(rss_feed)
 
         return HttpResponse(rss_content, content_type='application/xml')
 

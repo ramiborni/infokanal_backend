@@ -4,6 +4,7 @@ from rest_framework import serializers
 from airss.models import RSSFeedSource, RssFeedAiContent, RssFeedAiSettings
 
 
+
 class RSSFeedSourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = RSSFeedSource
