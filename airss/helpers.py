@@ -16,7 +16,7 @@ import base64
 
 from nltk import word_tokenize
 
-from airss.models import RssFeedAiSettings
+from airss.models import RssFeedAiSettings, FetchedNews
 from airss.scrapper import choose_scraping_method
 
 # import msgspec
@@ -24,9 +24,10 @@ import feedparser
 from datetime import datetime
 import time
 from .models import RSSFeedSource, RssFeedAiContent
-from .serializers import RssFeedAiContentSerializer
+from .serializers import RssFeedAiContentSerializer, FetchedNewsSerializer
 
 openai.api_key = os.getenv("OPENAI_APIKEY")
+
 
 def get_feed(serializer_data):
     feed = []
@@ -35,22 +36,33 @@ def get_feed(serializer_data):
     non_filtered_feeds = join_feed_entries(feed, serializer_data)
     return [dict(frozenset(item.items())) for item in non_filtered_feeds]
 
+
 def sort_feed(feed):
     def sort_key(entry):
         published_parsed = entry['data'].get('published_parsed')
         return datetime.fromtimestamp(time.mktime(published_parsed)) if published_parsed else datetime.min
+
     return sorted(feed, key=sort_key, reverse=True)
 
-def create_ai_stories(sorted_feed, is_existing_entry, get_ai_story, save_ai_story):
+
+def create_ai_stories(sorted_feed, is_existing_entry, get_ai_story, save_ai_story, list_feed_scrapped):
     list_ai_stories = []
     for article in sorted_feed:
+        if check_if_scrape(list_feed_scrapped, article):
+            continue
         if is_existing_entry(article):
             continue
         ai_story = get_ai_story(article)
         if ai_story:
             save_ai_story(ai_story)
-            list_ai_stories.append(ai_story)
+            serializer = FetchedNewsSerializer(data={
+                'source': article['feed_source_id'],
+                'feed_id': article['data']['id']
+            })
+            if serializer.is_valid():
+                serializer.save()
     return list_ai_stories
+
 
 def is_existing_entry(article):
     try:
@@ -59,9 +71,11 @@ def is_existing_entry(article):
     except RssFeedAiContent.DoesNotExist:
         return False
 
+
 def get_ai_story(article):
     method_name = article['feed_source_name']  # Assuming 'feed_source_name' is the method name
     return transform_article_with_ai(article, method_name)
+
 
 def save_ai_story(ai_story):
     source_id = ai_story['source_id']
@@ -70,6 +84,7 @@ def save_ai_story(ai_story):
     serializer = RssFeedAiContentSerializer(data=ai_story)
     if serializer.is_valid(raise_exception=True):
         serializer.save()
+
 
 def filter_results(feed_text: str, keywords, negative_keywords) -> bool:
     for word in word_tokenize(feed_text):
@@ -143,92 +158,102 @@ def parse_published_date(date_string):
     for date_format in date_formats:
         try:
             datetime_obj = datetime.strptime(date_string, date_format)
-            datetime_obj = datetime_obj.astimezone(norway_timezone) # Convert to Oslo time zone
+            datetime_obj = datetime_obj.astimezone(norway_timezone)  # Convert to Oslo time zone
             return datetime_obj
         except ValueError:
             continue
     return None
 
 
+def check_if_scrape(list, article):
+    for item in list:
+        if item['source'] == article['feed_source_id'] and item['feed_id'] == article['data']['id']:
+            return True
+    return False
+
+
 def transform_article_with_ai(article, method_name):
-    transformed_article = None  # Add this line
+    try:
+        transformed_article = None  # Add this line
 
-    # Execute the appropriate scraping method based on the source of the article
-    keywords_settings = RssFeedAiSettings.objects.all()
-    article_body = choose_scraping_method(method_name, article)
-    if article_body is not None and filter_results(article_body, keywords_settings[0].keywords,
-                                                   keywords_settings[0].negative_keywords):
-        # Initiate a chat with the OpenAI GPT-3.5-16K model and provide it with the instructions and the article text
-        chat_log = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-16k",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "As a journalist, you are tasked with rewording a given article in Only Norwegian "
-                               "language, Do not write anything in english or any other language unless the attributes. "
-                               "The rephrased version should include a title, preamble, and article text, all in a unique "
-                               "style that doesn't resemble the original text. The outputs should be given in three lines "
-                               "with the attributes (title=...\n preamble=...\n text=...), the title should be max 15 "
-                               "words and in one sentence, the preamble should be max 1 sentences and the text should be "
-                               "article body and it "
-                               "should be max 150 words. keep in mind that every article is sent potentially has some "
-                               "html,css,js scripts and you have to remove them and keep only the a article body, "
-                               "also do not ever write a text in English unless it's a brandname or person's name "
-                               "that's in english, also ignore any text that may look an ad and out of context of the "
-                               "article"
-                },
-                {
-                    "role": "user",
-                    "content": f"Please rewrite the following text in a unique style. The text is in Norwegian. Here is "
-                               f"the text:\n{article_body}\n"
+        # Execute the appropriate scraping method based on the source of the article
+        keywords_settings = RssFeedAiSettings.objects.all()
+        article_body = choose_scraping_method(method_name, article)
+        if article_body is not None and filter_results(article_body, keywords_settings[0].keywords,
+                                                       keywords_settings[0].negative_keywords):
+            # Initiate a chat with the OpenAI GPT-3.5-16K model and provide it with the instructions and the article text
+            chat_log = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo-16k",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "As a journalist, you are tasked with rewording a given article in Only Norwegian "
+                                   "language, Do not write anything in english or any other language unless the attributes. "
+                                   "The rephrased version should include a title, preamble, and article text, all in a unique "
+                                   "style that doesn't resemble the original text. The outputs should be given in three lines "
+                                   "with the attributes (title=...\n preamble=...\n text=...), the title should be max 15 "
+                                   "words and in one sentence, the preamble should be max 1 sentences and the text should be "
+                                   "article body and it "
+                                   "should be max 150 words. keep in mind that every article is sent potentially has some "
+                                   "html,css,js scripts and you have to remove them and keep only the a article body, "
+                                   "also do not ever write a text in English unless it's a brandname or person's name "
+                                   "that's in english, also ignore any text that may look an ad and out of context of the "
+                                   "article"
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Please rewrite the following text in a unique style. The text is in Norwegian. Here is "
+                                   f"the text:\n{article_body}\n"
+                    }
+                ]
+            )
+            # Pause for 30 seconds to wait for the AI response
+            time.sleep(30)
+
+            # Extract the AI's response and clean it
+            ai_response = chat_log.choices[0].message.content.strip().replace('"', '')
+
+            pattern = r'title=(.*?)\n{1,2}preamble=(.*?)\n{1,2}text=(.*)'
+
+            match = re.search(pattern, ai_response)
+
+            # If the AI response matches the expected pattern, extract the transformed title, preamble, and text
+            if match:
+                transformed_article = {
+                    'title': match.group(1),
+                    'preamble': match.group(2),
+                    'text': match.group(3),
                 }
-            ]
-        )
-        # Pause for 30 seconds to wait for the AI response
-        time.sleep(30)
 
-        # Extract the AI's response and clean it
-        ai_response = chat_log.choices[0].message.content.strip().replace('"', '')
+            # Try to find an image in the article links, resize it, and convert it to base64. If no image is found, generate a new image.
+            image_url = ""
+            links = article['data'].get('links', [])
+            for link in links:
+                if link.get('type') == 'image/jpeg' and link.get('rel') == 'enclosure':
+                    image_url = resize_image(link.get('href'))
+                    if image_url is None:
+                        print(transformed_article['title'])
+                        image_url = generate_base64_image(transformed_article['title'])
 
-        pattern = r'title=(.*?)\n{1,2}preamble=(.*?)\n{1,2}text=(.*)'
+            if image_url == "":
+                image_url = generate_base64_image(transformed_article['title'])
 
-        match = re.search(pattern, ai_response)
+            # Parse the publication date, if it exists
+            pub_date = article['data'].get('published')
+            pub_datetime = parse_published_date(pub_date) if pub_date else None
 
-        # If the AI response matches the expected pattern, extract the transformed title, preamble, and text
-        if match:
-            transformed_article = {
-                'title': match.group(1),
-                'preamble': match.group(2),
-                'text': match.group(3),
+            # Return the transformed article with additional information
+            return {
+                "source_id": article['feed_source_id'],
+                "article_url": article['data']["link"],
+                "pub_date": pub_datetime,
+                "source_feed_id": article['feed_source_name'] + "-" + article['data']['id'],
+                "image_url": image_url,
+                **transformed_article
             }
-
-        # Try to find an image in the article links, resize it, and convert it to base64. If no image is found, generate a new image.
-        image_url = ""
-        links = article['data'].get('links', [])
-        for link in links:
-            if link.get('type') == 'image/jpeg' and link.get('rel') == 'enclosure':
-                image_url = resize_image(link.get('href'))
-                if image_url is None:
-                    print(transformed_article['title'])
-                    image_url = generate_base64_image(transformed_article['title'])
-
-        if image_url == "":
-            image_url = generate_base64_image(transformed_article['title'])
-
-        # Parse the publication date, if it exists
-        pub_date = article['data'].get('published')
-        pub_datetime = parse_published_date(pub_date) if pub_date else None
-
-        # Return the transformed article with additional information
-        return {
-            "source_id": article['feed_source_id'],
-            "article_url": article['data']["link"],
-            "pub_date": pub_datetime,
-            "source_feed_id": article['feed_source_name'] + "-" + article['data']['id'],
-            "image_url": image_url,
-            **transformed_article
-        }
-    else:
+        else:
+            return None
+    except:
         return None
 
 

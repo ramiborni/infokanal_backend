@@ -3,7 +3,9 @@
 import os
 import sys
 from dotenv import load_dotenv
+import nltk
 
+nltk.download('punkt')
 
 load_dotenv()  # take environment variables from .env.
 

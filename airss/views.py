@@ -11,7 +11,7 @@ from django.http import Http404
 
 from airss.helpers import generate_rss_content, join_feed_entries, transform_article_with_ai, create_ai_stories, \
     sort_feed, is_existing_entry, get_ai_story, save_ai_story, get_feed
-from airss.models import RSSFeedSource, RssFeedAiContent, RssFeedAiSettings
+from airss.models import RSSFeedSource, RssFeedAiContent, RssFeedAiSettings, FetchedNews
 from airss.serializers import RSSFeedSourceSerializer, RssFeedAiContentSerializer, RssFeedAiSettingsSerializer
 
 import feedparser
@@ -99,8 +99,8 @@ class AIRssGetData(APIView):
         rss_feed_sources = RSSFeedSource.objects.all()
         serializer_data = RSSFeedSourceSerializer(rss_feed_sources, many=True).data
         feed = get_feed(serializer_data)
-        keywords_settings = RssFeedAiSettings.objects.all()
         filtered_feed = feed  # Optionally, you can implement filter_feed function in helpers.py
         sorted_feed = sort_feed(filtered_feed)
-        ai_stories = create_ai_stories(sorted_feed, is_existing_entry, get_ai_story, save_ai_story)
+        list_feed_scrapped = FetchedNews.objects.all()
+        ai_stories = create_ai_stories(sorted_feed, is_existing_entry, get_ai_story, save_ai_story,list_feed_scrapped)
         return Response(ai_stories, status=200)

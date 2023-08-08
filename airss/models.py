@@ -31,3 +31,9 @@ class RssFeedAiSettings(models.Model):
     _id = models.ObjectIdField()
     keywords = models.JSONField(default=[])
     negative_keywords = models.JSONField(default=[])
+
+
+class FetchedNews(models.Model):
+    _id = models.ObjectIdField()
+    source = models.ForeignKey(RSSFeedSource, on_delete=models.CASCADE)
+    feed_id = models.TextField()
