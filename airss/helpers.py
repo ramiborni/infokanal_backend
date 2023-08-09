@@ -162,12 +162,12 @@ def parse_published_date(date_string):
             return datetime_obj
         except ValueError:
             continue
-    return None
+    return datetime.now().astimezone(norway_timezone)
 
 
 def check_if_scrape(list, article):
     for item in list:
-        if item['source'] == article['feed_source_id'] and item['feed_id'] == article['data']['id']:
+        if item.source.id == article['feed_source_id'] and item.feed_id == article['data']['id']:
             return True
     return False
 
@@ -240,7 +240,7 @@ def transform_article_with_ai(article, method_name):
 
             # Parse the publication date, if it exists
             pub_date = article['data'].get('published')
-            pub_datetime = parse_published_date(pub_date) if pub_date else None
+            pub_datetime = parse_published_date(pub_date)
 
             # Return the transformed article with additional information
             return {
