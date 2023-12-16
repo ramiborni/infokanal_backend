@@ -47,13 +47,19 @@ def sort_feed(feed):
 
 def create_ai_stories(sorted_feed, is_existing_entry, get_ai_story, save_ai_story, list_feed_scrapped):
     list_ai_stories = []
+    print('loop in feeds')
     for article in sorted_feed:
         if check_if_scrape(list_feed_scrapped, article):
+            print('article scrapped already')
             continue
         if is_existing_entry(article):
+            print('article exist already')
             continue
+        print('get ai story')
         ai_story = get_ai_story(article)
+        print('got ai story')
         if ai_story:
+            print('save ai story')
             save_ai_story(ai_story)
             serializer = FetchedNewsSerializer(data={
                 'source': article['feed_source_id'],
@@ -93,9 +99,10 @@ def filter_results(feed_text: str, keywords, negative_keywords) -> bool:
             return False
 
         # Check if the word matches any of the positive keywords
-        if any(keyword == word or keyword.lower() == word or keyword.replace(' ',
+        checker = (keyword == word or keyword.lower() == word or keyword.replace(' ',
                                                                              '') == word or keyword.lower() == word.replace(
-            "#", "").lower() or (" " in keyword and keyword.lower() in feed_text.lower()) for keyword in keywords):
+            "#", "").lower() or (" " in keyword and keyword.lower() in feed_text.lower()) for keyword in keywords)
+        if any(checker):
             return True
 
     return False

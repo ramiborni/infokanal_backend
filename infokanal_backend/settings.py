@@ -24,7 +24,7 @@ SECRET_KEY = 'django-insecure-mab)34pvex$)n54@nwhkbpw!^rzcl-p&m-@ieow5xv)tf=#5^+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost","infokanal.com","services.infokanal.com","127.0.0.1"]
 
 # Application definition
 
@@ -38,10 +38,12 @@ INSTALLED_APPS = [
     'djongo',
     "django_cron",
     'rest_framework',
-    'airss'
+    'airss',
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -80,7 +82,7 @@ DATABASES = {
         'ENGINE': 'djongo',
         'ENFORCE_SCHEMA': True,
         'CLIENT': {
-            'host': "mongodb+srv://riki:VLcq1OqBEYOoZnxC@cluster0.s1eev.mongodb.net/?retryWrites=true&w=majority"
+            'host':  "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=200000"
         },
         'NAME': 'infokanal',
     }
@@ -129,4 +131,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CRON_CLASSES = [
     "airss.crons.RunEveryTenMinutesCronJob",
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "https://www.infokanal.com",
+    "http://localhost"
 ]
