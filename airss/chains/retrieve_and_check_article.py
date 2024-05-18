@@ -23,7 +23,7 @@ from nltk import word_tokenize
 
 load_dotenv()
 
-MODEL_NAME = "gemini-pro"
+MODEL_NAME = "gemini-1.5-flash-latest"
 
 llm = ChatGoogleGenerativeAI(model=MODEL_NAME, temperature=0, model_kwargs={"top_p": 0})
 

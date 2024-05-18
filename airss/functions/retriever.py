@@ -200,7 +200,7 @@ class NewsRetriever:
             return False
 
     def _is_feed_summarized(self, feed: FetchedFeedItem) -> bool:
-        if feed.is_summarized or feed.is_rejected or not feed.allowed_to_summarize:
+        if feed.is_summarized is True or feed.is_rejected is True or feed.allowed_to_summarize is False:
             return True
         else:
             return False

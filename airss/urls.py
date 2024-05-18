@@ -10,6 +10,7 @@ urlpatterns = [
     path('feed/modules/<str:slang>/news/', RssModuleNewsView.as_view()),
     path('feed/news/', views.FetchedFeedItemDetail.as_view()),
     path('feed/rss/<str:pk>', views.AIRssFeedApiView.as_view()),
-    path('feed/<str:pk>', views.AIRssGetData.as_view()),
+    path('feed/rss/<str:pk>/', views.AIRssFeedApiView.as_view()),
+    path('feed/', views.AIRssGetData.as_view()),
     path('feeds/statistics', RssStatisticsView.as_view())
 ]

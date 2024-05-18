@@ -18,7 +18,7 @@ from airss.functions.scrapper import Scrapper
 
 api_key = os.getenv("OPENAI_APIKEY")
 
-MODEL_NAME = "gemini-pro"
+MODEL_NAME = "gemini-1.5-flash-latest"
 
 
 class SummarizeInput(pydantic.BaseModel):
@@ -56,18 +56,15 @@ format_instructions = output_parser.get_format_instructions()
 prompt = langchain.PromptTemplate(
     input_variables=["article_body"],
     template=
-    "As a journalist, you are tasked with rewording a given article in Only Norwegian "
-    "language, Do not write anything in english or any other language unless the attributes. "
-    "The rephrased version should include a title, preamble, and article text, all in a unique "
-    "style that doesn't resemble the original text. The outputs should be given in three lines "
-    "with the attributes (title,preamble,news_body), the title should be max 15 "
-    "words and in one sentence, the preamble should be max 1 sentences and the text should be "
-    "article body and it "
-    "should be between 100 to 150 words. keep in mind that every article is sent potentially has some "
-    "html,css,js scripts or ads and you have to remove them and keep only the a article body, "
-    "also do not ever write a text in English unless it's a brand name or person's name "
-    "that's in english, also ignore any text that may look an ad and out of context of the "
-    "article"
+    "You are an investigative journalist for a leading Norwegian newspaper, and you have just received a detailed "
+    "article that contains crucial information on a recent political scandal. Your task is to meticulously summarize "
+    "this article in Norwegian. Focus on ensuring the summary is clear, concise, and free of any potentially "
+    "distracting elements such as HTML, CSS, or JavaScript scripts, as well as advertisements. Your summary should "
+    "consist of a compelling title (not exceeding 15 words), a concise preamble (one sentence), and an engaging "
+    "article body (100 to 150 words). Ensure that the language used is uniquely styled to avoid any resemblance to "
+    "the original text. Remember, the summary should be in Norwegian, and any brand names or personal names "
+    "originally in English should remain unchanged. How will you craft this summary to maintain the integrity and "
+    "essence of the original article while making it accessible and engaging for your Norwegian readership"
     "\nReply without additional context"
     "Only returns and replies with valid, iterable RFC8259 compliant JSON in your responses and don't make "
     "any multiple lines in the response"

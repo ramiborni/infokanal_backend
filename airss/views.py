@@ -21,6 +21,7 @@ from django.db.models.functions import TruncDay
 import calendar
 
 from airss.functions.retriever import NewsRetriever
+from airss.functions.rss_builder import RssBuilder
 from airss.models import RssModule, RssModuleSettings, RssSummarizedContent, RssSource, FetchedFeedItem, RssFeedSource
 from airss.serializers import RssModuleSerializer, RssModuleSettingsSerializer, RssSourceSerializer, \
     FetchedFeedItemSerializer, MinimalFetchedFeedItemSerializer
@@ -182,40 +183,13 @@ class RssSourceAPI(APIView):
 class AIRssFeedApiView(APIView):
 
     def get(self, request, *args, **kwargs):
-        rss_module_id = kwargs.get('pk')
-        rss_feed = RssSummarizedContent.objects.filter(rss_module__id=rss_module_id).select_related(
-            'rss_source').order_by('-pub_date')[:30]
-
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-
-        rss_content = None  # generate_rss_content(rss_feed)
-
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
-        # FIX THIS
+        rss_module_slang = str(kwargs.get('pk')).lower()
+        rss_module = get_object_or_404(RssModule, slang=rss_module_slang)
+        rss_feed = (RssSummarizedContent.objects
+                    .filter(fetched_feed_item__rss_module__exact=rss_module)
+                    .order_by('-pub_date')[:50])
+        print(len(rss_feed))
+        rss_content = RssBuilder.build_rss(slang=rss_module_slang, data=rss_feed)
 
         return HttpResponse(rss_content, content_type='application/xml')
 
