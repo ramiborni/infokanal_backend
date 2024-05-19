@@ -18,7 +18,7 @@ from airss.functions.scrapper import Scrapper
 
 api_key = os.getenv("OPENAI_APIKEY")
 
-MODEL_NAME = "gemini-1.5-flash-latest"
+MODEL_NAME = "gpt-4o"
 
 
 class SummarizeInput(pydantic.BaseModel):
@@ -34,7 +34,7 @@ class SummarizeInput(pydantic.BaseModel):
     is_manual_selection: bool
 
 
-llm = ChatGoogleGenerativeAI(model=MODEL_NAME, temperature=0, model_kwargs={"top_p": 0})
+llm = ChatOpenAI(model=MODEL_NAME, temperature=0, model_kwargs={"top_p": 0})
 
 report_schemas = [
     ResponseSchema(
@@ -146,6 +146,7 @@ def summarize_news(data: SummarizeInput):
         return None
 
     except Exception as e:
+        print("SUMMARIZE LANGCHAIN ERROR:")
         print(e)
         return None
 

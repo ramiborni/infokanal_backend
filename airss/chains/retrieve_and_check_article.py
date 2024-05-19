@@ -23,10 +23,9 @@ from nltk import word_tokenize
 
 load_dotenv()
 
-MODEL_NAME = "gemini-1.5-flash-latest"
+MODEL_NAME = "gpt-4o"
 
-llm = ChatGoogleGenerativeAI(model=MODEL_NAME, temperature=0, model_kwargs={"top_p": 0})
-
+llm = ChatOpenAI(model=MODEL_NAME, temperature=0, model_kwargs={"top_p": 0})
 system_prompt = """
 I will provide you with text scraped using BeautifulSoup4 from a news website. Please perform following checks, 
 focusing on Norwegian and English texts, but applicable to other languages as well: 
