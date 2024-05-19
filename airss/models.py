@@ -93,7 +93,7 @@ class FetchedFeedItem(models.Model):
     image_url = models.TextField(default="", blank=True)
     rss_source = models.ForeignKey(RssSource, on_delete=models.CASCADE)
     rss_module = models.ForeignKey(RssModule, on_delete=models.CASCADE)
-    pub_date = models.DateTimeField(auto_now_add=True)
+    pub_date = models.DateTimeField(null=False)
 
 
 class RssSummarizedContent(models.Model):

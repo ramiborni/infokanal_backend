@@ -182,8 +182,10 @@ class NewsRetriever:
                         serializer.save()
                         feed.is_summarized = True
                         feed.save()
+                        list_summarized_news.append(result)
+                    else:
+                        print("Serializer errors:", serializer.errors)
 
-                    list_summarized_news.append(result)
                 else:
                     feed.is_rejected = True
                     feed.save()

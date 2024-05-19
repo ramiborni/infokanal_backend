@@ -138,7 +138,7 @@ class FetchedFeedItemSerializer(serializers.ModelSerializer):
         fields = ['_id', 'feed_id', 'feed_item_url', 'feed_content', 'allowed_to_summarize', 'rss_source', 'rss_module',
                   'feed_title',
                   'image_url',
-                  'rss_feed_source']
+                  'rss_feed_source', 'pub_date']
         read_only_fields = ['_id']
 
 
