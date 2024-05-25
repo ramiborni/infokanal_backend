@@ -86,6 +86,9 @@ retrieve_and_check_article_chain = LLMChain(
 
 
 def filter_keywords(feed_text: str, keywords: list[str], negative_keywords: list[str]) -> bool:
+    if len(keywords) < 0 and len(negative_keywords) < 0:
+        return True
+
     for word in word_tokenize(feed_text):
         # Check if the word matches any of the negative keywords
         if any(neg_keyword.lower() == word for neg_keyword in negative_keywords):

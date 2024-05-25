@@ -88,7 +88,8 @@ class RssModuleSettingsSerializer(serializers.ModelSerializer):
 class RssFeedSourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = RssFeedSource
-        fields = ['_id', 'source_url', 'require_login', 'summarize_from_rss_feed', "source_name"]
+        fields = ['_id', 'source_url', 'require_login', 'summarize_from_rss_feed', "source_name",
+                  "require_keywords_verification"]
         read_only_fields = ['_id']
 
 
@@ -132,7 +133,6 @@ class RssSourceSerializer(serializers.ModelSerializer):
 
 
 class FetchedFeedItemSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = FetchedFeedItem
         fields = ['_id', 'feed_id', 'feed_item_url', 'feed_content', 'allowed_to_summarize', 'rss_source', 'rss_module',
@@ -147,7 +147,8 @@ class MinimalFetchedFeedItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FetchedFeedItem
-        fields = ['feed_id', 'feed_item_url','feed_title','pub_date', 'feed_content', 'allowed_to_summarize', 'image_url',
+        fields = ['feed_id', 'feed_item_url', 'feed_title', 'pub_date', 'feed_content', 'allowed_to_summarize',
+                  'image_url',
                   'rss_feed_source']
 
 
