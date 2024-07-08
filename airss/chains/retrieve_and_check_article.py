@@ -2,10 +2,11 @@
 """
 
 """
-
+import os
 from typing import Any, Optional
 
 from dotenv import load_dotenv
+from google.auth.transport.urllib3 import Request
 from langchain.chains import LLMChain
 from langchain.output_parsers import StructuredOutputParser, ResponseSchema
 from langchain_core.prompts import (
@@ -14,18 +15,44 @@ from langchain_core.prompts import (
     SystemMessagePromptTemplate, PromptTemplate,
 )
 from langchain_core.runnables import RunnableLambda
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 import langchain
+import vertexai
 
 from nltk import word_tokenize
+from vertexai.preview.generative_models import GenerativeModel
+from langchain_google_vertexai import ChatVertexAI
+
+from google.oauth2.service_account import Credentials
 
 load_dotenv()
 
-MODEL_NAME = "gpt-4o"
+PROJECT_ID = "api-project-794879078210"  # @param {type:"string"}
+REGION = "us-central1"  # @param {type:"string"}
+MODEL_NAME = "gemini-1.5-flash-001"
 
-llm = ChatOpenAI(model=MODEL_NAME, temperature=0, model_kwargs={"top_p": 0})
+dir_path = str(os.path.dirname(os.path.realpath(__file__)))
+
+key_path = os.path.join(os.path.dirname(__file__), 'api-project-794879078210-49cbe6a49fd0.json')
+
+credentials = Credentials.from_service_account_file(
+    key_path,
+    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+)
+if credentials.expired:
+    credentials.refresh(Request())
+
+# Initialize Vertex AI SDK
+vertexai.init(project=PROJECT_ID, location=REGION)
+
+model = ChatVertexAI(
+    model=MODEL_NAME,
+    temperature=0,
+    max_tokens=None,
+    max_retries=6,
+    stop=None,
+)
+
 system_prompt = """
 I will provide you with text scraped using BeautifulSoup4 from a news website. Please perform following checks, 
 focusing on Norwegian and English texts, but applicable to other languages as well: 
@@ -80,7 +107,7 @@ class RetrieveCheckArticleOutput(BaseModel):
 
 
 retrieve_and_check_article_chain = LLMChain(
-    llm=llm,
+    llm=model,
     prompt=prompt,
 )
 

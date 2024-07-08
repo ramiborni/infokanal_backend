@@ -288,7 +288,7 @@ class RssStatisticsView(APIView):
         automated_module_count = sum(
             1 for module in modules if any(setting.manual_convert is False for setting in module.settings.all()))
 
-        recent_news = RssSummarizedContent.objects.order_by('-created_at')[:2]
+        recent_news = RssSummarizedContent.objects.select_related('fetched_feed_item').order_by('-created_at')[:2]
 
         recent_news_data = [
             {
@@ -296,9 +296,10 @@ class RssStatisticsView(APIView):
                 'preamble': news.preamble,
                 'text': news.text,
                 'article_url': news.article_url,
-                'pub_date': format(news.pub_date, 'Y-m-d H:i:s'),  # Format date as string
+                'pub_date': news.pub_date,  # Format date as string
                 'image_url': news.image_url,
-                'created_at': format(news.created_at, 'Y-m-d H:i:s')  # Format date as string
+                'created_at': news.created_at, # Format date as string
+                'source': news.fetched_feed_item.rss_module.name,
             }
             for news in recent_news
         ]

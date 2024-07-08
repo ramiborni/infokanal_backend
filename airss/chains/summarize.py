@@ -2,23 +2,47 @@ import json
 import os
 
 import pydantic
+from google.auth.transport.urllib3 import Request
 from langchain.chains.llm import LLMChain
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
+from langchain_google_vertexai import ChatVertexAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, \
     HumanMessagePromptTemplate
 
 from langchain_core.runnables import RunnableLambda
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_openai.chat_models import ChatOpenAI
 from nltk import word_tokenize
 import langchain
 
+import vertexai
+from vertexai.preview.generative_models import GenerativeModel
+
 from airss.chains.retrieve_and_check_article import retrieve_and_check_article_chain
 from airss.functions.scrapper import Scrapper
+from google.oauth2.service_account import Credentials
 
-api_key = os.getenv("OPENAI_APIKEY")
+PROJECT_ID = "api-project-794879078210"  # @param {type:"string"}
+REGION = "us-central1"  # @param {type:"string"}
+MODEL_NAME = "gemini-1.5-flash-001"
 
-MODEL_NAME = "gpt-4o"
+key_path = os.path.join(os.path.dirname(__file__), 'api-project-794879078210-49cbe6a49fd0.json')
+
+credentials = Credentials.from_service_account_file(
+    key_path,
+    scopes=["https://www.googleapis.com/auth/cloud-platform"]
+)
+if credentials.expired:
+    credentials.refresh(Request())
+
+# Initialize Vertex AI SDK
+vertexai.init(project=PROJECT_ID, location=REGION)
+
+model = ChatVertexAI(
+    model=MODEL_NAME,
+    temperature=0,
+    max_tokens=None,
+    max_retries=6,
+    stop=None,
+)
 
 
 class SummarizeInput(pydantic.BaseModel):
@@ -33,8 +57,6 @@ class SummarizeInput(pydantic.BaseModel):
     require_keywords_verification: bool
     is_manual_selection: bool
 
-
-llm = ChatOpenAI(model=MODEL_NAME, temperature=0, model_kwargs={"top_p": 0})
 
 report_schemas = [
     ResponseSchema(
@@ -56,29 +78,52 @@ format_instructions = output_parser.get_format_instructions()
 prompt = langchain.PromptTemplate(
     input_variables=["article_body"],
     template=
-    "You are an investigative journalist for a leading Norwegian newspaper, and you have just received a detailed "
-    "article that contains crucial information on a recent political scandal. Your task is to meticulously summarize "
-    "this article in Norwegian. Focus on ensuring the summary is clear, concise, and free of any potentially "
-    "distracting elements such as HTML, CSS, or JavaScript scripts, as well as advertisements. Your summary should "
-    "consist of a compelling title (not exceeding 15 words), a concise preamble (one sentence), and an engaging "
-    "article body (100 to 150 words). Ensure that the language used is uniquely styled to avoid any resemblance to "
-    "the original text. Remember, the summary should be in Norwegian, and any brand names or personal names "
-    "originally in English should remain unchanged. How will you craft this summary to maintain the integrity and "
-    "essence of the original article while making it accessible and engaging for your Norwegian readership"
+    '''
+    "As a journalist, you are tasked with rewording a given article in Only Norwegian "
+
+                                   "language, Do not write anything in english or any other language unless the attributes. "
+
+                                   "The rephrased version should include a title, preamble, and article text, all in a unique "
+
+                                   "style that doesn't resemble the original text. The outputs should be given in three lines "
+
+                                   "with the attributes (title=...\n preamble=...\n news_body=...), the title should be max 15 "
+
+                                   "words and in one sentence, the preamble should be max 1 sentences and the text should be "
+
+                                   "article body and it "
+
+                                   "should be max 150 words. keep in mind that every article is sent potentially has some "
+
+                                   "html,css,js scripts and you have to remove them and keep only the a article body, "
+
+                                   "also do not ever write a text in English unless it's a brandname or person's name "
+
+                                   "that's in english, also ignore any text that may look an ad and out of context of the "
+
+                                   "article"
+
+You shouldn't reply with something like "Politisk skandale ryster Norge: Nye avsløringer avdekket"
+
+and Always try to understand the news article
+
+Reply without additional context
+
     "\nReply without additional context"
     "Only returns and replies with valid, iterable RFC8259 compliant JSON in your responses and don't make "
     "any multiple lines in the response"
     "{format_instructions}"
 
     "Please rewrite the following text in a unique style. The text is in Norwegian. Here is "
-    "the text:{article_body}\n",
+    "the text:{article_body}\n"
+    ''',
 
     partial_variables={
         "format_instructions": format_instructions,
     },
 )
 
-chain = LLMChain(llm=llm, prompt=prompt)
+chain = LLMChain(llm=model, prompt=prompt)
 
 
 def check_article_with_ai(text: str, keywords: list[str], negative_keywords: list[str] = ['None']):
